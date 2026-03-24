@@ -1,0 +1,40 @@
+name: Daily NEPSE Scraping and Analysis
+
+on:
+  schedule:
+    - cron: '15 10 * * 1-5' # Runs Mon-Fri at 10:15 AM UTC (which is 4:00 PM Nepal Time after market close)
+  push:
+    branches: [ main ] # Runs if you manually push code
+  workflow_dispatch: # Allows you to trigger it manually via GUI
+
+jobs:
+  scrape-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run Scraper
+      run: python scraper.py
+
+    - name: Run Analyzer
+      run: python analyzer.py
+
+    - name: Commit and Push Changes
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add data/nepse_data.csv index.html
+        git commit -m "Daily NEPSE Automated Update [skip ci]" || echo "No changes to commit"
+        git push
